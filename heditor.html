@@ -1,0 +1,131 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1.0,user-scalable=no,minimum-scale=1.0,maximum-scale=1.0"/>
+
+    <title>富文本TEST</title>
+</head>
+<body>
+    <div style="width: 40vw;" class="wz">
+        <label for="editor"></label>
+        <textarea id="editor" name="editor" rows="5" style="display: none;"> </textarea>
+        <button onclick="getHtml()">获取HTML</button>
+        <button onclick="getText()">获取纯文本</button>
+
+        <div id="result" style="width: 100vw;">res</div>
+        <br>
+    </div>
+    <script src="http://code.jquery.com/jquery-2.2.1.js"></script>
+
+    <script src="base64.js"></script>
+
+    <script src="handyeditor/HandyEditor.min.js"></script>
+
+    <script language="JavaScript">
+
+
+        var he = HE.getEditor('editor',{
+            autoHeight : true,
+            autoFloat : false,
+            topOffset : 0,
+            uploadPhoto : true,
+            uploadPhotoUrl : 'http://10.128.23.50',
+            uploadPhotoHandler : ':8511/setimage',
+            uploadPhotoSize : 2048,
+            uploadPhotoType : 'gif,png,jpg,jpeg',
+            uploadPhotoSizeError : '不能上传大于2MB的图片',
+            uploadPhotoTypeError : '只能上传gif,png,jpg,jpeg格式的图片',
+            lang : 'zh-jian',
+            skin : 'HandyEditor',
+            externalSkin : '',
+            item : ['bold','italic','strike','underline','fontSize','fontName','paragraph','color','backColor','|','center','left','right','full','indent','outdent','|','link','unlink','textBlock','code','selectAll','removeFormat','trash','|','image','expression','subscript','superscript','horizontal','orderedList','unorderedList','|','undo','redo','|','html','|','about',
+                '|','fangda','suoxiao']
+        });
+
+
+        // 放大缩小图片
+        $('.wz').on('click',function(ev){
+			$(this).find('img').css({'max-width':'100%','max-height':'100%'});
+            if(ev.target.tagName=="IMG"){
+                if(!ev.target.getAttribute("id")){
+                    ev.target.setAttribute('id','img1');
+                    $( ev.target).siblings('img').removeAttr('id');
+                }
+            }
+        })
+
+        //获取HMTL
+        function getHtml() {
+            ajaxFun();
+        }
+
+        //获取纯文本
+        function getText() {
+            ajaxgetFun();
+        }
+        function ajaxgetFun() {
+            $.ajax({
+                url: "http://10.128.23.50:8511/gethtml", // 目标资源
+                cache: false, //true 如果当前请求有缓存的话，直接使用缓存。如果该属性设置为 false，则每次都会向服务器请求
+                async: true, //默认是true，即为异步方式
+                data: null,
+                dataType: "json", // 服务器响应的数据类型
+                type: "GET", // 请求方式
+                success: function (data) {
+                    console.log(document.querySelector('#result').innerHTML)
+                    var htmlres =  Base64.decode(data.data[data.data.length - 1].data);
+                    document.querySelector('#result').innerHTML = htmlres;
+                }
+            });
+        }
+        function ajaxFun() {
+            var params = {
+                name: "dadalang-gg",
+                data: Base64.encode(he.getHtml())
+            };
+
+            $.ajax({
+                url: "http://10.128.23.50:8511/sethtml", // 目标资源
+                cache: false, //true 如果当前请求有缓存的话，直接使用缓存。如果该属性设置为 false，则每次都会向服务器请求
+                async: true, //默认是true，即为异步方式
+                data: JSON.stringify(params),
+                dataType: "json", // 服务器响应的数据类型
+                type: "POST", // 请求方式
+                success: function (data) {
+                    console.log(data)
+                }
+            });
+        }
+
+        /**
+         * 上传图片
+         */
+        function uploadImg() {
+            if ($("#photoFile").val() == '') {
+                return;
+            }
+            var formData = new FormData();
+            formData.append('photo', document.getElementById('photoFile').files[0]);
+            $.ajax({
+                url:"${pageContext.request.contextPath}/system/uploadPhoto",
+                type:"post",
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(data) {
+                    if (data.type == "success") {
+                        $("#preview_photo").attr("src", data.filepath+data.filename);
+                        $("#productImg").val(data.filename);
+                    } else {
+                        alert(data.msg);
+                    }
+                },
+                error:function(data) {
+                    alert("上传失败")
+                }
+            });
+        }
+    </script>
+</body>
+</html>
